@@ -540,6 +540,126 @@ func TestPeerConnection_Renegotiation_CodecChange(t *testing.T) {
 	closePairNow(t, pcOffer, pcAnswer)
 }
 
+func TestPeerConnection_Renegotiation_AddTransceiver_With_Different_Codec(t *testing.T) {
+	lim := test.TimeOut(time.Second * 30)
+	defer lim.Stop()
+
+	report := test.CheckRoutines(t)
+	defer report()
+
+	// Our SFU server is on the offer side. Our SFU server supports VP8 and H264
+
+	mediaEngine := MediaEngine{}
+	// Default Pion Audio Codecs
+	mediaEngine.RegisterDefaultCodecs()
+
+	mediaEngine.setMultiCodecNegotiation(true)
+	api := NewAPI(WithMediaEngine(&mediaEngine))
+	api.settingEngine.disableMediaEngineCopy = true
+
+	pcOffer, err := api.NewPeerConnection(Configuration{})
+	assert.NoError(t, err)
+
+	// Viewer is on the answer side
+	mediaEngine2 := MediaEngine{}
+	mediaEngine2.RegisterDefaultCodecs()
+	mediaEngine2.setMultiCodecNegotiation(true)
+	api2 := NewAPI(WithMediaEngine(&mediaEngine2))
+	api2.settingEngine.disableMediaEngineCopy = true
+	pcAnswer, err := api2.NewPeerConnection(Configuration{})
+	assert.NoError(t, err)
+
+	tracksCh := make(chan *TrackRemote)
+	pcAnswer.OnTrack(func(track *TrackRemote, _ *RTPReceiver) {
+		tracksCh <- track
+		for {
+			if _, _, readErr := track.ReadRTP(); errors.Is(readErr, io.EOF) {
+				return
+			}
+		}
+	})
+	connected := make(chan struct{})
+	pcOffer.OnConnectionStateChange(func(state PeerConnectionState) {
+		if state == PeerConnectionStateConnected {
+			close(connected)
+		}
+	})
+
+	err = signalPair(pcOffer, pcAnswer)
+
+	<-connected
+
+	require.NoError(t, err)
+
+	track1, err := NewTrackLocalStaticSample(RTPCodecCapability{MimeType: MimeTypeVP8}, "video1", "pion1")
+	require.NoError(t, err)
+
+	// First streamer uses VP8
+	sender1, err := pcOffer.AddTransceiverFromTrack(track1)
+	_ = sender1
+
+	require.NoError(t, err)
+	err = sender1.SetCodecPreferences([]RTPCodecParameters{
+		{
+			RTPCodecCapability: RTPCodecCapability{MimeType: MimeTypeVP8, ClockRate: 90000},
+			PayloadType:        96,
+		},
+	})
+	require.NoError(t, err)
+
+	err = signalPair(pcOffer, pcAnswer)
+	require.NoError(t, err)
+
+	transceivers := pcOffer.GetTransceivers()
+	require.Equal(t, 1, len(transceivers))
+	require.Equal(t, "1", transceivers[0].Mid())
+
+	transceivers = pcAnswer.GetTransceivers()
+	require.Equal(t, 1, len(transceivers))
+	require.Equal(t, "1", transceivers[0].Mid())
+
+	ctx, cancel := context.WithCancel(context.Background())
+	go sendVideoUntilDone(t, ctx.Done(), []*TrackLocalStaticSample{track1})
+	remoteTrack1 := <-tracksCh
+	cancel()
+
+	assert.Equal(t, "video1", remoteTrack1.ID())
+	assert.Equal(t, "pion1", remoteTrack1.StreamID())
+
+	// Second streamer is created
+	track2, err := NewTrackLocalStaticSample(RTPCodecCapability{MimeType: MimeTypeH264}, "video2", "pion2")
+	// track2, err := NewTrackLocalStaticSample(RTPCodecCapability{MimeType: MimeTypeVP8}, "video2", "pion2")
+	require.NoError(t, err)
+
+	// Second streamer uses H264
+	sender2, err := pcOffer.AddTransceiverFromTrack(track2)
+	_ = sender2
+	require.NoError(t, err)
+
+	newCodecs := []RTPCodecParameters{
+		{
+			RTPCodecCapability: RTPCodecCapability{MimeType: MimeTypeH264, ClockRate: 90000, SDPFmtpLine: "level-asymmetry-allowed=1;packetization-mode=1;profile-level-id=64001f"},
+			// RTPCodecCapability: RTPCodecCapability{MimeType: MimeTypeVP8, ClockRate: 90000, SDPFmtpLine: ""},
+			PayloadType: 112,
+		},
+	}
+
+	err = sender2.SetCodecPreferences(newCodecs)
+	require.NoError(t, err) // Error occurs here
+
+	require.NoError(t, signalPair(pcOffer, pcAnswer))
+	ctx, cancel = context.WithCancel(context.Background())
+	go sendVideoUntilDone(t, ctx.Done(), []*TrackLocalStaticSample{track2})
+
+	remoteTrack2 := <-tracksCh
+	cancel()
+
+	assert.Equal(t, "video2", remoteTrack2.ID())
+	assert.Equal(t, "pion2", remoteTrack2.StreamID())
+
+	closePairNow(t, pcOffer, pcAnswer)
+}
+
 func TestPeerConnection_Renegotiation_RemoveTrack(t *testing.T) {
 	lim := test.TimeOut(time.Second * 30)
 	defer lim.Stop()

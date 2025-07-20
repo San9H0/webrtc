@@ -698,10 +698,11 @@ func (pc *PeerConnection) CreateOffer(options *OfferOptions) (SessionDescription
 		}
 
 		if pc.currentRemoteDescription == nil {
-			descr, err = pc.generateUnmatchedSDP(currentTransceivers, useIdentity)
+			descr, err = pc.generateUnmatchedSDP(currentTransceivers, true, useIdentity)
 		} else {
 			descr, err = pc.generateMatchedSDP(
 				currentTransceivers,
+				true,
 				useIdentity,
 				true, /*includeUnmatched */
 				connectionRoleFromDtlsRole(defaultDtlsRoleOffer),
@@ -865,7 +866,7 @@ func (pc *PeerConnection) CreateAnswer(*AnswerOptions) (SessionDescription, erro
 	pc.mu.Lock()
 	defer pc.mu.Unlock()
 
-	descr, err := pc.generateMatchedSDP(pc.rtpTransceivers, useIdentity, false /*includeUnmatched */, connectionRole)
+	descr, err := pc.generateMatchedSDP(pc.rtpTransceivers, false, useIdentity, false /*includeUnmatched */, connectionRole)
 	if err != nil {
 		return SessionDescription{}, err
 	}
@@ -2715,6 +2716,7 @@ func (pc *PeerConnection) startRTP(
 //nolint:cyclop
 func (pc *PeerConnection) generateUnmatchedSDP(
 	transceivers []*RTPTransceiver,
+	isOffer bool,
 	useIdentity bool,
 ) (*sdp.SessionDescription, error) {
 	desc, err := sdp.NewJSEPSessionDescription(useIdentity)
@@ -2785,6 +2787,7 @@ func (pc *PeerConnection) generateUnmatchedSDP(
 
 	return populateSDP(
 		desc,
+		isOffer,
 		isPlanB,
 		dtlsFingerprints,
 		pc.api.settingEngine.sdpMediaLevelFingerprints,
@@ -2807,7 +2810,7 @@ func (pc *PeerConnection) generateUnmatchedSDP(
 //nolint:gocognit,gocyclo,cyclop
 func (pc *PeerConnection) generateMatchedSDP(
 	transceivers []*RTPTransceiver,
-	useIdentity, includeUnmatched bool,
+	isOffer, useIdentity, includeUnmatched bool,
 	connectionRole sdp.ConnectionRole,
 ) (*sdp.SessionDescription, error) {
 	desc, err := sdp.NewJSEPSessionDescription(useIdentity)
@@ -2955,6 +2958,7 @@ func (pc *PeerConnection) generateMatchedSDP(
 
 	return populateSDP(
 		desc,
+		isOffer,
 		detectedPlanB,
 		dtlsFingerprints,
 		pc.api.settingEngine.sdpMediaLevelFingerprints,

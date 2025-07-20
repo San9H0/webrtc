@@ -639,6 +639,7 @@ func TestMediaDescriptionFingerprints(t *testing.T) {
 
 			testSdp, err = populateSDP(testSdp,
 				false,
+				false,
 				dtlsFingerprints,
 				SDPMediaDescriptionFingerprints,
 				false,
@@ -692,6 +693,7 @@ func TestPopulateSDP(t *testing.T) { //nolint:cyclop,maintidx
 
 		offerSdp, err := populateSDP(
 			d,
+			false,
 			false,
 			[]DTLSFingerprint{},
 			se.sdpMediaLevelFingerprints,
@@ -752,6 +754,7 @@ func TestPopulateSDP(t *testing.T) { //nolint:cyclop,maintidx
 		offerSdp, err := populateSDP(
 			d,
 			false,
+			false,
 			[]DTLSFingerprint{},
 			se.sdpMediaLevelFingerprints,
 			se.candidates.ICELite,
@@ -791,6 +794,7 @@ func TestPopulateSDP(t *testing.T) { //nolint:cyclop,maintidx
 
 		offerSdp, err := populateSDP(
 			&sdp.SessionDescription{},
+			false,
 			false,
 			[]DTLSFingerprint{},
 			se.sdpMediaLevelFingerprints,
@@ -850,6 +854,7 @@ func TestPopulateSDP(t *testing.T) { //nolint:cyclop,maintidx
 		offerSdp, err := populateSDP(
 			d,
 			false,
+			false,
 			[]DTLSFingerprint{},
 			se.sdpMediaLevelFingerprints,
 			se.candidates.ICELite,
@@ -883,6 +888,7 @@ func TestPopulateSDP(t *testing.T) { //nolint:cyclop,maintidx
 		offerSdp, err := populateSDP(
 			&sdp.SessionDescription{},
 			false,
+			false,
 			[]DTLSFingerprint{},
 			se.sdpMediaLevelFingerprints,
 			se.candidates.ICELite,
@@ -913,6 +919,7 @@ func TestPopulateSDP(t *testing.T) { //nolint:cyclop,maintidx
 
 		offerSdp, err = populateSDP(
 			&sdp.SessionDescription{},
+			false,
 			false,
 			[]DTLSFingerprint{},
 			se.sdpMediaLevelFingerprints,
@@ -957,6 +964,7 @@ func TestPopulateSDP(t *testing.T) { //nolint:cyclop,maintidx
 		offerSdp, err := populateSDP(
 			d,
 			false,
+			false,
 			[]DTLSFingerprint{},
 			se.sdpMediaLevelFingerprints,
 			se.candidates.ICELite,
@@ -996,6 +1004,7 @@ func TestPopulateSDP(t *testing.T) { //nolint:cyclop,maintidx
 		matchedBundle := "audio"
 		offerSdp, err := populateSDP(
 			d,
+			false,
 			false,
 			[]DTLSFingerprint{},
 			se.sdpMediaLevelFingerprints,
@@ -1038,6 +1047,7 @@ func TestPopulateSDP(t *testing.T) { //nolint:cyclop,maintidx
 		matchedBundle := ""
 		offerSdp, err := populateSDP(
 			d,
+			false,
 			false,
 			[]DTLSFingerprint{},
 			se.sdpMediaLevelFingerprints,

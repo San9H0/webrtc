@@ -54,7 +54,7 @@ func (t *RTPTransceiver) SetCodecPreferences(codecs []RTPCodecParameters) error 
 
 	for _, codec := range codecs {
 		if _, matchType := codecParametersFuzzySearch(
-			codec, t.api.mediaEngine.getCodecsByKind(t.kind),
+			codec, t.api.mediaEngine.getAvailableCodecsByKind(t.kind),
 		); matchType == codecMatchNone {
 			return fmt.Errorf("%w %s", errRTPTransceiverCodecUnsupported, codec.MimeType)
 		}
@@ -65,12 +65,11 @@ func (t *RTPTransceiver) SetCodecPreferences(codecs []RTPCodecParameters) error 
 	return nil
 }
 
-// Codecs returns list of supported codecs.
-func (t *RTPTransceiver) getCodecs() []RTPCodecParameters {
+// getCodecsCommon returns list of supported codecs.
+func (t *RTPTransceiver) getCodecsCommon(mediaEngineCodecs []RTPCodecParameters) []RTPCodecParameters {
 	t.mu.RLock()
 	defer t.mu.RUnlock()
 
-	mediaEngineCodecs := t.api.mediaEngine.getCodecsByKind(t.kind)
 	if len(t.codecs) == 0 {
 		return mediaEngineCodecs
 	}
@@ -87,6 +86,16 @@ func (t *RTPTransceiver) getCodecs() []RTPCodecParameters {
 	}
 
 	return filteredCodecs
+}
+
+// getCodecs returns list of negotiated codecs or available codecs.
+func (t *RTPTransceiver) getCodecs() []RTPCodecParameters {
+	return t.getCodecsCommon(t.api.mediaEngine.getCodecsByKind(t.kind))
+}
+
+// getAvailableCodecs returns list of available codecs.
+func (t *RTPTransceiver) getAvailableCodecs() []RTPCodecParameters {
+	return t.getCodecsCommon(t.api.mediaEngine.getAvailableCodecsByKind(t.kind))
 }
 
 // Sender returns the RTPTransceiver's RTPSender if it has one.

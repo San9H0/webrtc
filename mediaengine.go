@@ -670,6 +670,18 @@ func (m *MediaEngine) updateFromRemoteDescription(desc sdp.SessionDescription) e
 	return nil
 }
 
+func (m *MediaEngine) getAvailableCodecsByKind(typ RTPCodecType) []RTPCodecParameters {
+	m.mu.RLock()
+	defer m.mu.RUnlock()
+
+	if typ == RTPCodecTypeVideo {
+		return m.videoCodecs
+	} else if typ == RTPCodecTypeAudio {
+		return m.audioCodecs
+	}
+	return nil
+}
+
 func (m *MediaEngine) getCodecsByKind(typ RTPCodecType) []RTPCodecParameters {
 	m.mu.RLock()
 	defer m.mu.RUnlock()

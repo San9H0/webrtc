@@ -544,6 +544,7 @@ func addSenderSDP(
 //nolint:cyclop
 func addTransceiverSDP(
 	descr *sdp.SessionDescription,
+	isOffer bool,
 	isPlanB bool,
 	shouldAddCandidates bool,
 	dtlsFingerprints []DTLSFingerprint,
@@ -568,7 +569,12 @@ func addTransceiverSDP(
 		WithPropertyAttribute(sdp.AttrKeyRTCPMux).
 		WithPropertyAttribute(sdp.AttrKeyRTCPRsize)
 
-	codecs := transceiver.getCodecs()
+	var codecs []RTPCodecParameters
+	if isOffer {
+		codecs = transceiver.getAvailableCodecs()
+	} else {
+		codecs = transceiver.getCodecs()
+	}
 	for _, codec := range codecs {
 		name := strings.TrimPrefix(codec.MimeType, "audio/")
 		name = strings.TrimPrefix(name, "video/")
@@ -704,6 +710,7 @@ func bundleMatchFromRemote(matchBundleGroup *string) func(mid string) bool {
 //nolint:cyclop
 func populateSDP(
 	descr *sdp.SessionDescription,
+	isOffer bool,
 	isPlanB bool,
 	dtlsFingerprints []DTLSFingerprint,
 	mediaDescriptionFingerprint bool,
@@ -760,6 +767,7 @@ func populateSDP(
 		} else {
 			shouldAddID, err = addTransceiverSDP(
 				descr,
+				isOffer,
 				isPlanB,
 				shouldAddCandidates,
 				mediaDtlsFingerprints,
