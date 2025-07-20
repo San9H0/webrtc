@@ -64,6 +64,13 @@ func (t *TrackRemote) RID() string {
 	return t.rid
 }
 
+func (t *TrackRemote) SetRID(rid string) {
+	t.mu.Lock()
+	defer t.mu.Unlock()
+
+	t.rid = rid
+}
+
 // PayloadType gets the PayloadType of the track.
 func (t *TrackRemote) PayloadType() PayloadType {
 	t.mu.RLock()
