@@ -71,6 +71,7 @@ func (t *RTPTransceiver) getCodecsCommon(mediaEngineCodecs []RTPCodecParameters)
 	defer t.mu.RUnlock()
 
 	if len(t.codecs) == 0 {
+		fmt.Println("[TESTDEBUG] getCodecsCommon called.. t.codecs is 0")
 		return mediaEngineCodecs
 	}
 
@@ -85,16 +86,19 @@ func (t *RTPTransceiver) getCodecsCommon(mediaEngineCodecs []RTPCodecParameters)
 		}
 	}
 
+	fmt.Println("[TESTDEBUG] getCodecsCommon called.. filteredCodecs:", filteredCodecs)
 	return filteredCodecs
 }
 
 // getCodecs returns list of negotiated codecs or available codecs.
 func (t *RTPTransceiver) getCodecs() []RTPCodecParameters {
+	fmt.Println("[TESTDEBUG] RTPTransceiver getCodecs called.. media:", t.api.mediaEngine.getCodecsByKind(t.kind))
 	return t.getCodecsCommon(t.api.mediaEngine.getCodecsByKind(t.kind))
 }
 
 // getAvailableCodecs returns list of available codecs.
 func (t *RTPTransceiver) getAvailableCodecs() []RTPCodecParameters {
+	fmt.Println("[TESTDEBUG] RTPTransceiver getAvailableCodecs called.. media:", t.api.mediaEngine.getAvailableCodecsByKind(t.kind))
 	return t.getCodecsCommon(t.api.mediaEngine.getAvailableCodecsByKind(t.kind))
 }
 
